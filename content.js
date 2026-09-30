@@ -32,11 +32,13 @@
     'collections', 'sponsors', 'git-guides', 'open-source', 'premium'
   ]);
 
-  // 悬浮球图标：一枚朝右上方的跳跃箭头。原创图形，不使用任何厂商商标。
+  // 悬浮球图标：白色「<」+ 绿色「↗」，与扩展图标（icons/icon-master.png）同一套标识。
+  // 比例按主图实测换算，并放大到仍在 48px 圆内（圆心 8,8 半径 8）的最大尺寸。
   const MARK_SVG = `
-    <g fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5.25 10.75 L10.25 5.75"/>
-      <path d="M7 5.75 L10.25 5.75 L10.25 9"/>
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3">
+      <path d="M5.64 4.46 L1.82 8.08 L5.64 11.68" stroke="#ffffff"/>
+      <path d="M8.03 4.59 L14.11 4.59 L14.11 10.68" stroke="#81e188"/>
+      <path d="M7.97 11.53 L14.11 4.59" stroke="#81e188"/>
     </g>
   `;
 

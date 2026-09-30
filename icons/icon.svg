@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 64 64">
-  <!-- GitHub Quick Jump：深色圆底 + 白色跳跃箭头。原创图形，不使用任何厂商商标。 -->
-  <circle cx="32" cy="32" r="32" fill="#1c1e22"/>
-  <g fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M21 43 L41 23"/>
-    <path d="M28 23 L41 23 L41 36"/>
-  </g>
-</svg>
