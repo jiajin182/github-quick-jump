@@ -2,11 +2,13 @@
   'use strict';
 
   const HOST_ID = 'gh-quick-jump-host';
+  const PANEL_ID = 'gh-quick-jump-panel';
   const POS_KEY = 'gh-quick-jump-pos';
   const CUSTOM_KEY = 'gh-quick-jump-custom';
   const FAB_SIZE = 48;
   const EDGE_MARGIN = 12;
   const DRAG_THRESHOLD = 4;
+  const ROUTE_POLL_MS = 1000;
 
   const SERVICES = [
     { id: 'gitdiagram', label: 'GitDiagram', desc: '看架构图', url: (o, r) => `https://gitdiagram.com/${o}/${r}` },
@@ -30,7 +32,13 @@
     'collections', 'sponsors', 'git-guides', 'open-source', 'premium'
   ]);
 
-  const GITHUB_MARK = 'M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z';
+  // 悬浮球图标：一枚朝右上方的跳跃箭头。原创图形，不使用任何厂商商标。
+  const MARK_SVG = `
+    <g fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5.25 10.75 L10.25 5.75"/>
+      <path d="M7 5.75 L10.25 5.75 L10.25 9"/>
+    </g>
+  `;
 
   const CSS = `
     .root {
@@ -54,7 +62,7 @@
     }
     .fab:hover { transform: scale(1.06); background: rgba(45, 48, 54, 0.96); }
     .fab:active { transform: scale(0.97); }
-    .fab svg { width: 23.4px; height: 23.4px; fill: #ffffff; pointer-events: none; }
+    .fab svg { width: 23.4px; height: 23.4px; pointer-events: none; }
     .panel {
       position: absolute;
       left: 0;
@@ -218,10 +226,11 @@
     root.innerHTML = `
       <style>${CSS}</style>
       <div class="root">
-        <div class="fab" role="button" tabindex="0" aria-label="GitHub Quick Jump" aria-expanded="false">
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="${GITHUB_MARK}"/></svg>
+        <div class="fab" role="button" tabindex="0" aria-label="GitHub Quick Jump"
+             aria-expanded="false" aria-controls="${PANEL_ID}">
+          <svg viewBox="0 0 16 16" aria-hidden="true">${MARK_SVG}</svg>
         </div>
-        <div class="panel" role="menu"></div>
+        <div class="panel" id="${PANEL_ID}"></div>
       </div>
     `;
 
@@ -256,7 +265,6 @@
     const isCurrent = svc.id === currentId;
     const node = document.createElement('a');
     node.className = isCurrent ? 'item current' : svc.custom ? 'item custom' : 'item';
-    node.setAttribute('role', 'menuitem');
     node.dataset.service = svc.id;
 
     if (isCurrent) {
@@ -281,7 +289,7 @@
   }
 
   function renderItems(info) {
-    if (!info) return;
+    if (!info || !panel) return;
     const currentId = currentServiceId(location.hostname);
     panel.textContent = '';
     for (const svc of activeServices()) {
@@ -289,11 +297,11 @@
     }
   }
 
-  function openPanel() {
-    if (panel.classList.contains('open')) return;
+  // 面板高度随自定义地址数量增长，先量出实际高度，再挑空间更大的一侧展开，
+  // 并把高度限制在该侧可用空间内（超出时面板内部滚动），避免整体跑出视口。
+  function layoutPanel() {
+    if (!host || !panel) return;
     const rect = host.getBoundingClientRect();
-    // 面板高度随自定义地址数量增长，先量出实际高度，再挑空间更大的一侧展开，
-    // 并把高度限制在该侧可用空间内（超出时面板内部滚动），避免整体跑出视口。
     panel.style.maxHeight = '';
     const height = panel.offsetHeight;
     const below = window.innerHeight - rect.bottom - 10;
@@ -302,6 +310,11 @@
     panel.classList.toggle('align-right', rect.left + rect.width / 2 > window.innerWidth / 2);
     panel.classList.toggle('up', useUp);
     panel.style.maxHeight = `${Math.max(useUp ? above : below, Math.min(height, 120))}px`;
+  }
+
+  function openPanel() {
+    if (panel.classList.contains('open')) return;
+    layoutPanel();
     panel.classList.add('open');
     fab.setAttribute('aria-expanded', 'true');
   }
@@ -425,7 +438,7 @@
 
   function update() {
     if (!host) buildWidget();
-    if (!host.isConnected) document.body.appendChild(host);
+    if (!host.isConnected && document.body) document.body.appendChild(host);
     const info = parseRepo(location.hostname, location.pathname);
     currentInfo = info;
     if (!info) {
@@ -443,27 +456,47 @@
     closePanel();
   }
 
+  // GitHub 是 Turbo 单页应用：站内跳转既不重新加载文档，也不派发 popstate。
+  // 注意不能靠 patch history.pushState 来监听 —— content script 运行在隔离世界，
+  // 和页面各自持有独立的 window 包装对象，在隔离世界里改写 pushState 拦不到
+  // 页面自己发出的调用（这点已用 CDP 实测确认）。所以这里改成三条互补的信号：
+  //   1. MutationObserver 观察 documentElement 的子节点变化。Turbo 每次渲染都会
+  //      整体替换 <body>，这既是「路由变了」的信号，也是宿主元素被连带摘掉的信号。
+  //   2. popstate 覆盖前进/后退（事件是跨世界共享的，隔离世界能收到）。
+  //   3. 低频轮询兜底，覆盖只改 URL、不换 DOM 的软导航。
   function watchRoute() {
-    for (const method of ['pushState', 'replaceState']) {
-      const original = history[method];
-      history[method] = function (...args) {
-        const result = original.apply(this, args);
-        setTimeout(update, 0);
-        return result;
-      };
+    let lastHref = location.href;
+
+    function sync() {
+      if (location.href !== lastHref) {
+        lastHref = location.href;
+        update();
+        return;
+      }
+      if (host && !host.isConnected && document.body) {
+        document.body.appendChild(host);
+      }
     }
-    window.addEventListener('popstate', () => setTimeout(update, 0));
+
+    const observer = new MutationObserver(sync);
+    observer.observe(document.documentElement, { childList: true });
+    window.addEventListener('popstate', () => setTimeout(sync, 0));
+    setInterval(sync, ROUTE_POLL_MS);
+  }
+
+  function applyCustom(raw) {
+    customServices = sanitizeCustom(raw);
+    renderItems(currentInfo);
+    if (panel && panel.classList.contains('open')) layoutPanel();
   }
 
   try {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== 'sync' || !changes[CUSTOM_KEY]) return;
-      customServices = sanitizeCustom(changes[CUSTOM_KEY].newValue);
-      renderItems(currentInfo);
+      applyCustom(changes[CUSTOM_KEY].newValue);
     });
     chrome.storage.sync.get(CUSTOM_KEY, (data) => {
-      customServices = sanitizeCustom(data && data[CUSTOM_KEY]);
-      renderItems(currentInfo);
+      applyCustom(data && data[CUSTOM_KEY]);
     });
   } catch (err) {
     /* storage 不可用时只用内置服务 */
