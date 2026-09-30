@@ -89,6 +89,9 @@ github-quick-jump/
 │   └── render_icons.py     # 由 icon.svg 生成各尺寸 PNG
 ├── tests/
 │   └── verify-custom.js    # 自定义地址逻辑的断言测试
+├── scripts/
+│   └── package.js          # 生成 Chrome 商店 zip 的打包脚本
+├── PRIVACY.md              # 隐私政策
 └── docs/
     ├── images/                    # README 效果图
     └── superpowers/specs/2026-09-30-github-quick-jump-design.md
@@ -119,6 +122,21 @@ python icons/render_icons.py
 
 脚本用无头 Chrome 渲染 SVG（浏览器对 SVG 的渲染是权威的），再用 Pillow 降采样生成 16/32/48/128 四个 PNG。需要本机装有 Chrome 或 Edge。
 
+### 打包（上传 Chrome 网上应用店）
+
+生成一个只含运行时文件的 zip，可直接上传 Chrome 网上应用店：
+
+```
+node scripts/package.js
+```
+
+产物为 `dist/github-quick-jump.zip`，只包含 `manifest.json`、`content.js`、`options.html`、`options.js`、`icons/` 下的 4 个图标。不包含 README、隐私政策、文档与测试文件。纯 node 实现、无第三方依赖，跨平台可用。
+
+上传商店时：
+
+- **隐私政策**字段填写 [PRIVACY.md](PRIVACY.md) 的公开地址（例如本仓库该文件在 GitHub 上的渲染页面）
+- 商店会校验 zip 里的 `manifest.json` 与图标，脚本已确保文件齐全
+
 ## 技术要点
 
 - **Manifest V3**，纯 content script 注入，不使用 background service worker
@@ -132,6 +150,10 @@ python icons/render_icons.py
 - 只支持 Chrome / Edge（Manifest V3），未做 Firefox 兼容
 - 不校验仓库是否存在，私有或不存在的仓库会直接拼接地址，由第三方服务返回 404
 - 自定义地址的排序、分组、启用开关未做，编辑只能在选项页进行
+
+## 隐私
+
+本扩展**不收集、不存储、不上传任何个人数据，也不向任何服务器发送网络请求**。它只在本地保存按钮位置（`chrome.storage.local`）与你添加的自定义地址（`chrome.storage.sync`），并在你点击跳转项时向相应第三方服务打开链接。详见 [PRIVACY.md](PRIVACY.md)。
 
 ## 许可证
 
