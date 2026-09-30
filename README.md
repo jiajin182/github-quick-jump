@@ -87,9 +87,9 @@ github-quick-jump/
 ├── options.html            # 自定义地址管理页
 ├── options.js
 ├── icons/
-│   ├── icon.svg            # 图标源文件
+│   ├── icon-master.png     # 图标源文件（1024x1024）
 │   ├── icon16/32/48/128.png
-│   └── render_icons.py     # 由 icon.svg 生成各尺寸 PNG
+│   └── render_icons.py     # 由主图生成各尺寸 PNG
 ├── tests/
 │   └── verify-custom.js    # 自定义地址逻辑的断言测试
 ├── scripts/
@@ -116,14 +116,16 @@ node tests/verify-custom.js
 
 ### 重新生成图标
 
-Chrome 的扩展图标不支持 SVG，必须是位图。改了 `icons/icon.svg` 后：
+Chrome 的扩展图标不支持 SVG，必须是位图。`icons/icon-master.png` 是唯一的源文件
+（1024x1024，透明背景 + 深色圆角方块 + 白色「<」与绿色「↗」）。改了它之后：
 
 ```
 pip install pillow
 python icons/render_icons.py
 ```
 
-脚本用无头 Chrome 渲染 SVG（浏览器对 SVG 的渲染是权威的），再用 Pillow 降采样生成 16/32/48/128 四个 PNG。需要本机装有 Chrome 或 Edge。
+脚本先用 Pillow 按不透明像素求出图形内容的包围盒，以内容中心裁成正方形并只留一点透明边距，
+再降采样生成 16/32/48/128 四个 PNG。只依赖 Pillow，不需要浏览器。
 
 ### 打包（上传 Chrome 网上应用店）
 

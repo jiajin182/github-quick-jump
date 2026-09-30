@@ -22,7 +22,7 @@
 - 点击展开跳转项，新标签页打开；内置 7 项（6 个第三方服务 + GitHub 回跳）
 - 当前所在的那一项置灰标「当前」，不可点击
 - 选项页管理自定义跳转地址：增删改，存 `chrome.storage.sync`，自定义项追加在内置项之后
-- 扩展图标与悬浮球视觉一致（深色圆底 + 白色章鱼猫）
+- 扩展图标与悬浮球视觉一致（深色底 + 白色「<」与绿色「↗」标识）
 
 **不做（YAGNI）**
 - 自定义项的排序 / 分组 / 启用开关
@@ -52,12 +52,12 @@ github-quick-jump/
 ├── options.html            # 自定义地址管理页（选项页）
 ├── options.js
 ├── icons/
-│   ├── icon.svg            # 图标源文件（深色圆底 + 白色章鱼猫）
+│   ├── icon-master.png     # 图标源文件（深色圆角方块 + 白色「<」与绿色「↗」）
 │   ├── icon16.png
 │   ├── icon32.png
 │   ├── icon48.png
 │   ├── icon128.png
-│   └── render_icons.py     # 由 icon.svg 生成各尺寸 PNG
+│   └── render_icons.py     # 由主图生成各尺寸 PNG
 ├── tests/
 │   └── verify-custom.js    # 自定义服务解析/合并逻辑的断言测试（node 运行）
 └── docs/superpowers/specs/2026-09-30-github-quick-jump-design.md
@@ -67,9 +67,7 @@ github-quick-jump/
 
 ### 扩展图标
 
-Chrome 的扩展图标不支持 SVG，必须是位图。`icons/icon.svg` 是源文件（与悬浮球同一套视觉：`#1c1e22` 圆底 + 白色章鱼猫），由 `icons/render_icons.py` 用无头 Chrome 渲染 SVG、再用 Pillow 降采样生成 16/32/48/128 四个 PNG。改了 SVG 后重跑该脚本即可。
-
-图标用 `<mask>` 实现：遮罩圆减去章鱼猫路径的填充区域（该路径填充得到的是「圆盘挖空猫」的补集），从而得到白色猫剪影，且边缘无接缝。
+Chrome 的扩展图标不支持 SVG，必须是位图。`icons/icon-master.png` 是源文件（深色圆角方块 + 白色「<」与绿色「↗」，与悬浮球同一套视觉），由 `icons/render_icons.py` 用 Pillow 裁切、降采样生成 16/32/48/128 四个 PNG。改主图后重跑该脚本即可，不需要浏览器。
 
 ## 5. 模块划分
 
@@ -174,7 +172,7 @@ chrome.storage.sync 的 gh-quick-jump-custom 变化（首次读取 / onChanged�
 
 ## 8. 交互细节
 
-- **主按钮**：直径 48px 圆形，内联 GitHub 章鱼猫 SVG（不依赖网络资源，规避 CSP 与图标加载失败）
+- **主按钮**：直径 48px 圆形，内联标识 SVG（不依赖网络资源，规避 CSP 与图标加载失败）
 - **拖拽**：`pointerdown` → `pointermove` → `pointerup`；位移超过 4px 判定为拖拽，不触发点击；`pointerup` 后吸附到最近的左/右边缘（边距 12px），垂直位置限制在视口内
 - **持久化**：存储 `{side: 'left'|'right', top: number}` 到 `chrome.storage.local`
 - **面板方向**：展开前先量出面板实际高度，比较按钮上下两侧的可用空间，朝空间更大的一侧展开（按钮靠上则向下、靠下则向上）；面板高度限制在该侧可用空间内，超出部分面板内部滚动，避免面板整体跑出视口。左右方向按按钮所在半屏对齐，避免面板越出屏幕边缘
@@ -247,7 +245,9 @@ node tests/verify-custom.js
 
 2. **打包脚本 ZIP 本地文件头字段偏移写错**。`scripts/package.js` 把「压缩方式」写到了 offset 6（该处实为通用位标志），导致生成的 zip 本地头是 `FLAG=8 / METHOD=0`，而中央目录是 `FLAG=0 / METHOD=8`，与实际 deflate 数据不符。`.NET` / `Expand-Archive` 因读中央目录而能解出，但 `bsdtar` 会失败。已修正为 offset 8。
 
-3. **图标替换**。原图标是 GitHub 官方 Octocat 标志，扩展名也含 GitHub，存在商店「冒名与知识产权」政策风险。改为原创的跳跃箭头图形（`icons/icon.svg` 与 content.js 中的 `MARK_SVG`）。
+3. **图标替换**。原图标是 GitHub 官方 Octocat 标志，扩展名也含 GitHub，存在商店「冒名与知识产权」政策风险。改为作者自绘的标识：深色圆角方块 + 白色「<」与绿色「↗」。
+   源文件为 `icons/icon-master.png`（1024x1024），由 `render_icons.py` 用 Pillow 裁切降采样出各尺寸，不再依赖无头浏览器渲染 SVG（`icons/icon.svg` 已删除）。
+   悬浮球（content.js 的 `MARK_SVG`）按主图实测比例重画为同一标识，并缩放到仍在 48px 圆内的最大尺寸。
 
 4. **新增工具栏入口**（§2 原「不做」项）。上架后面向普通用户时，选项页只能从扩展管理页进入，可发现性太差。新增 `action` + `popup.html` / `popup.js`，弹窗内一个按钮进入选项页。
 
