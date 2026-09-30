@@ -18,11 +18,11 @@
 
 在 GitHub 仓库页点击右上角悬浮球展开跳转列表（当前浏览器所在的站点会置灰标「当前」）：
 
-![GitHub 仓库页悬浮面板](docs/images/panel.png)
+![GitHub 仓库页悬浮面板](docs/images/panel-1280x800.png)
 
 在选项页添加自定义跳转地址：
 
-![选项页管理自定义地址](docs/images/options.png)
+![选项页管理自定义地址](docs/images/options-1280x800.png)
 
 ## 支持的跳转目标
 
@@ -96,7 +96,7 @@ github-quick-jump/
 │   └── package.js          # 生成 Chrome 商店 zip 的打包脚本
 ├── PRIVACY.md              # 隐私政策
 └── docs/
-    ├── images/                    # README 效果图
+    ├── images/                    # README 效果图（1280x800，同时用作商店截图）
     └── superpowers/specs/2026-09-30-github-quick-jump-design.md
 ```
 
@@ -141,7 +141,7 @@ node scripts/package.js
 
 - **隐私政策**字段填写 [PRIVACY.md](PRIVACY.md) 的公开地址（例如本仓库该文件在 GitHub 上的渲染页面）
 - 商店会校验 zip 里的 `manifest.json` 与图标，脚本已确保文件齐全
-- **截图**：商店要求 1280x800 或 640x400。仓库里已备好两张 1280x800 的图：`docs/images/store-panel-1280x800.png`（悬浮面板）与 `docs/images/store-options-1280x800.png`（选项页）。它们是用无头 Chrome 渲染真实 `content.js` / `options.html` 得到的；换成你自己装好扩展后在真实 GitHub 页面上的截图效果更好
+- **截图**：商店要求 1280x800 或 640x400。上面「效果」一节嵌的那两张图（`docs/images/panel-1280x800.png` 与 `docs/images/options-1280x800.png`）本身就是 1280x800，可直接上传。它们是用无头 Chrome 渲染真实 `content.js` / `options.html` 得到的；换成你自己装好扩展后在真实 GitHub 页面上的截图效果更好
 
 ## 技术要点
 
