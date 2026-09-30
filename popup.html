@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>GitHub Quick Jump</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --text: #1f2328;
+    --muted: #656d76;
+    --border: #d1d9e0;
+    --accent: #0969da;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161b22;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --border: #30363d;
+      --accent: #4493f8;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    width: 288px;
+    margin: 0;
+    padding: 16px;
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  h1 { margin: 0 0 8px; font-size: 15px; }
+  p { margin: 0 0 12px; color: var(--muted); }
+  code {
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--border) 45%, transparent);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+  }
+  button {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: var(--accent);
+    color: #ffffff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { filter: brightness(1.08); }
+</style>
+</head>
+<body>
+  <h1>GitHub Quick Jump</h1>
+  <p>打开任意 GitHub 仓库页，右上角的悬浮球可以一键跳到 GitDiagram、DeepWiki、Gitingest、GitHub1s、GitHub.dev、StackBlitz，也能一键跳回 GitHub。</p>
+  <button type="button" id="open-options">管理自定义地址</button>
+  <p style="margin: 12px 0 0;">地址模板支持 <code>{owner}</code> 与 <code>{repo}</code> 占位符。</p>
+  <script src="popup.js"></script>
+</body>
+</html>
