@@ -13,6 +13,16 @@
 - **可拖动**：按钮可拖到屏幕任意高度，松手后吸附最近的左/右边缘，位置自动记住
 - **自定义地址**：在选项页自行添加跳转地址，支持 `{owner}` / `{repo}` 占位符
 
+## 效果
+
+在 GitHub 仓库页点击右上角悬浮球展开跳转列表（当前浏览器所在的站点会置灰标「当前」）：
+
+![GitHub 仓库页悬浮面板](docs/images/panel.png)
+
+在选项页添加自定义跳转地址：
+
+![选项页管理自定义地址](docs/images/options.png)
+
 ## 支持的跳转目标
 
 | 标签 | 用途 | URL 模板 |
@@ -80,6 +90,7 @@ github-quick-jump/
 ├── tests/
 │   └── verify-custom.js    # 自定义地址逻辑的断言测试
 └── docs/
+    ├── images/                    # README 效果图
     └── superpowers/specs/2026-09-30-github-quick-jump-design.md
 ```
 
