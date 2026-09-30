@@ -17,6 +17,8 @@ const OUT_FILE = path.join(OUT_DIR, 'github-quick-jump.zip');
 const FILES = [
   'manifest.json',
   'content.js',
+  'popup.html',
+  'popup.js',
   'options.html',
   'options.js',
   'icons/icon16.png',
@@ -56,7 +58,8 @@ function pushLocal(name, data) {
   const local = Buffer.alloc(30);
   local.writeUInt32LE(0x04034b50, 0);
   local.writeUInt16LE(20, 4); // version needed
-  local.writeUInt16LE(8, 6); // method = deflate
+  local.writeUInt16LE(0, 6); // general purpose bit flag
+  local.writeUInt16LE(8, 8); // method = deflate
   local.writeUInt32LE(crc, 14);
   local.writeUInt32LE(compressed.length, 18);
   local.writeUInt32LE(data.length, 22);
