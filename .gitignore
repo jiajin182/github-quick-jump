@@ -1,0 +1,18 @@
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+
+# Python（icons/render_icons.py）
+__pycache__/
+*.pyc
+
+# 打包产物
+*.zip
+*.crx
+*.pem

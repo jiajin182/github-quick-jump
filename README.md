@@ -1,0 +1,127 @@
+# GitHub Quick Jump
+
+一个 Chrome / Edge 扩展：在 GitHub 仓库页悬浮一个可拖动的按钮，一键把当前仓库 `owner/repo` 拼到第三方服务地址上，在新标签页打开。跳到第三方站点后按钮依然在，可以继续一键切换，也可以一键跳回 GitHub。
+
+灵感来源：B 站视频《GitHub 改一下网址，解锁 6 种打开方式》。
+
+## 功能
+
+- **一键跳转**：在 GitHub 仓库页展开面板，7 个跳转目标随点随开
+- **跨站常驻**：6 个第三方站点同样注入，跳过去之后不用退回 GitHub 就能换到别的服务
+- **一键回跳**：第三方站点上，列表末尾固定有 GitHub 项，可跳回仓库页
+- **当前项置灰**：所在站点的对应项标「当前」并禁用，避免误点重复跳转
+- **可拖动**：按钮可拖到屏幕任意高度，松手后吸附最近的左/右边缘，位置自动记住
+- **自定义地址**：在选项页自行添加跳转地址，支持 `{owner}` / `{repo}` 占位符
+
+## 支持的跳转目标
+
+| 标签 | 用途 | URL 模板 |
+| --- | --- | --- |
+| GitDiagram | 看架构图 | `https://gitdiagram.com/{owner}/{repo}` |
+| DeepWiki | 读项目讲解 | `https://deepwiki.com/{owner}/{repo}` |
+| Gitingest | 整理给 AI | `https://gitingest.com/{owner}/{repo}` |
+| GitHub1s | 在线读源码 | `https://github1s.com/{owner}/{repo}` |
+| GitHub.dev | 在线改代码 | `https://github.dev/{owner}/{repo}` |
+| StackBlitz | 在线运行 | `https://stackblitz.com/github/{owner}/{repo}` |
+| GitHub | 回到仓库页 | `https://github.com/{owner}/{repo}` |
+
+前 6 项为第三方服务，第 7 项 GitHub 为回跳入口，固定排在末尾。
+
+## 安装
+
+尚未上架商店，先用开发者模式加载：
+
+1. 下载或 clone 本仓库
+2. 打开 `chrome://extensions`（Edge 为 `edge://extensions`）
+3. 打开右上角「开发者模式」
+4. 点「加载已解压的扩展程序」，选择本仓库根目录
+
+## 使用
+
+打开任意 GitHub 仓库页（如 `https://github.com/vuejs/core`），右上角出现圆形按钮：
+
+- **点击按钮** 展开跳转列表
+- **拖动按钮** 调整位置，松手后吸附左右边缘，刷新后位置保持
+- **点击列表项** 在新标签页打开对应服务
+- **点击空白处或按 Esc** 收起列表
+
+在 GitHub 上，列表里的 GitHub 项显示为「当前」并置灰；跳到 `deepwiki.com/vuejs/core` 之后，则轮到 DeepWiki 项置灰，其余 6 项可点。
+
+按钮只出现在仓库页。GitHub 首页、搜索页、用户主页、设置页，以及第三方站点的首页都不会出现。
+
+## 自定义地址
+
+在 `chrome://extensions` 的扩展详情页点「扩展程序选项」打开选项页，可以增删改自定义跳转地址：
+
+| 字段 | 必填 | 说明 |
+| --- | --- | --- |
+| 名称 | 是 | 面板左侧显示，最长 20 字符 |
+| 用途说明 | 否 | 面板右侧显示，最长 12 字符 |
+| 地址模板 | 是 | 完整 http(s) 链接，可含 `{owner}` / `{repo}` 占位符 |
+
+举例，添加 `https://sourcegraph.com/github.com/{owner}/{repo}`，名称 `Sourcegraph`、说明 `全局搜索`，在 `vuejs/core` 页面上就会跳到 `https://sourcegraph.com/github.com/vuejs/core`。不含占位符的模板会作为固定地址打开。
+
+自定义项追加在内置 7 项之后，圆点为蓝色（内置项为绿色）。在选项页改完无需刷新已打开的仓库页，面板会即时更新。
+
+自定义地址存在 `chrome.storage.sync`，会跟随浏览器账号同步；按钮位置存在 `chrome.storage.local`。
+
+## 目录结构
+
+```
+github-quick-jump/
+├── manifest.json           # Manifest V3 声明
+├── content.js              # 全部注入逻辑（含 Shadow DOM 样式）
+├── options.html            # 自定义地址管理页
+├── options.js
+├── icons/
+│   ├── icon.svg            # 图标源文件
+│   ├── icon16/32/48/128.png
+│   └── render_icons.py     # 由 icon.svg 生成各尺寸 PNG
+├── tests/
+│   └── verify-custom.js    # 自定义地址逻辑的断言测试
+└── docs/
+    └── superpowers/specs/2026-09-30-github-quick-jump-design.md
+```
+
+无构建工具、无运行时依赖、无第三方库。
+
+## 开发
+
+改完代码后，在 `chrome://extensions` 点扩展卡片上的刷新按钮，再刷新页面即可生效。
+
+### 测试
+
+```
+node tests/verify-custom.js
+```
+
+该测试把 `content.js` 中 `'use strict'` 到 `buildWidget` 之间的纯逻辑段取出求值，断言自定义地址的清洗与合并逻辑：脏数据过滤（空名称、非 http(s) 模板、`javascript:`、相对路径、非对象项）、字段 trim、占位符替换与 URL 编码、固定地址、id 唯一性、合并顺序、自定义项不参与「当前」判定。
+
+### 重新生成图标
+
+Chrome 的扩展图标不支持 SVG，必须是位图。改了 `icons/icon.svg` 后：
+
+```
+pip install pillow
+python icons/render_icons.py
+```
+
+脚本用无头 Chrome 渲染 SVG（浏览器对 SVG 的渲染是权威的），再用 Pillow 降采样生成 16/32/48/128 四个 PNG。需要本机装有 Chrome 或 Edge。
+
+## 技术要点
+
+- **Manifest V3**，纯 content script 注入，不使用 background service worker
+- **Shadow DOM 隔离样式**，GitHub 改版不会带崩按钮与面板外观
+- **URL 反解析**：按域名从 URL 反推 `owner/repo`，跳转模板与反解析互为逆运算，因此在任一站点上都能解析出仓库
+- **SPA 路由监听**：patch `history.pushState` / `replaceState` 并监听 `popstate`，页面内跳转时重新解析
+- **不可信输入处理**：渲染前一律清洗 `chrome.storage.sync` 里的自定义地址，丢弃非 http(s) 模板，跳转链接始终带 `rel="noopener noreferrer"`
+
+## 已知限制
+
+- 只支持 Chrome / Edge（Manifest V3），未做 Firefox 兼容
+- 不校验仓库是否存在，私有或不存在的仓库会直接拼接地址，由第三方服务返回 404
+- 自定义地址的排序、分组、启用开关未做，编辑只能在选项页进行
+
+## 许可证
+
+[MIT](LICENSE)

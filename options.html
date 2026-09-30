@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitHub Quick Jump — 自定义地址</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --text: #1f2328;
+    --muted: #656d76;
+    --border: #d1d9e0;
+    --accent: #0969da;
+    --danger: #cf222e;
+    --field: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --border: #30363d;
+      --accent: #4493f8;
+      --danger: #f85149;
+      --field: #0d1117;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 20px 64px;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  main { max-width: 680px; margin: 0 auto; }
+  h1 { margin: 0 0 6px; font-size: 20px; }
+  h2 { margin: 0 0 12px; font-size: 14px; color: var(--muted); font-weight: 600; }
+  .sub { margin: 0 0 24px; color: var(--muted); }
+  code {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--border) 45%, transparent);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+  .card {
+    padding: 20px;
+    margin-bottom: 20px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .field { margin-bottom: 14px; }
+  label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; }
+  .opt { margin-left: 6px; font-weight: 400; color: var(--muted); font-size: 12px; }
+  input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--field);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+  .preview {
+    margin: 0 0 14px;
+    color: var(--muted);
+    font-size: 12px;
+    word-break: break-all;
+  }
+  .preview b { color: var(--text); font-weight: 600; }
+  .error { margin: 0 0 14px; color: var(--danger); font-size: 13px; }
+  .actions { display: flex; gap: 8px; }
+  button {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--muted); }
+  button[type="submit"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #ffffff;
+    font-weight: 600;
+  }
+  button[type="submit"]:hover { filter: brightness(1.08); }
+  ul { margin: 0; padding: 0; list-style: none; }
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+  }
+  li:first-child { border-top: 0; }
+  .meta { min-width: 0; flex: 1; }
+  .meta .name { font-weight: 600; }
+  .meta .name .tag {
+    margin-left: 8px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .meta .url {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    word-break: break-all;
+  }
+  .row-actions { display: flex; gap: 6px; flex: none; }
+  .row-actions button { padding: 5px 10px; font-size: 12px; }
+  .row-actions .remove { color: var(--danger); }
+  .empty { margin: 0; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>GitHub Quick Jump</h1>
+  <p class="sub">
+    自定义地址会追加到悬浮面板跳转列表的末尾。地址模板支持 <code>{owner}</code> 与 <code>{repo}</code> 两个占位符，
+    例如 <code>https://example.com/{owner}/{repo}</code>。
+  </p>
+
+  <section class="card">
+    <form id="form" novalidate>
+      <div class="field">
+        <label for="label">名称</label>
+        <input id="label" maxlength="20" placeholder="例如 MyTool" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="desc">用途说明<span class="opt">可选，显示在面板右侧</span></label>
+        <input id="desc" maxlength="12" placeholder="例如 看依赖图" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="template">地址模板</label>
+        <input id="template" placeholder="https://example.com/{owner}/{repo}" autocomplete="off">
+      </div>
+      <p class="preview" id="preview"></p>
+      <p class="error" id="error" hidden></p>
+      <div class="actions">
+        <button type="submit" id="submit">添加</button>
+        <button type="button" id="cancel" hidden>取消编辑</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>已添加（<span id="count">0</span>）</h2>
+    <ul id="list"></ul>
+    <p class="empty" id="empty">还没有自定义地址，用上面的表单添加第一条。</p>
+  </section>
+</main>
+<script src="options.js"></script>
+</body>
+</html>

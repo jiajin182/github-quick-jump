@@ -1,0 +1,7 @@
+# 仓库内统一用 LF 存储，避免 Windows 开发 / macOS、Linux 克隆时出现整篇换行符 diff
+* text=auto eol=lf
+
+# 二进制文件不做换行符转换
+*.png binary
+*.jpg binary
+*.ico binary
