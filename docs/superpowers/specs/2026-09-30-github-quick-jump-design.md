@@ -235,3 +235,20 @@ node tests/verify-custom.js
 15. 在选项页编辑该条并保存，回到仓库页确认面板同步更新；再删除该条，确认面板中消失
 16. 添加一条模板为 `javascript:alert(1)` 的地址，确认表单报错、无法保存
 17. 连续添加 8 条以上自定义地址，确认面板在视口内且可内部滚动（按钮贴近屏幕顶部与底部各试一次）
+
+## 11. 变更记录
+
+### 1.2.0
+
+上架前复查发现并修正的问题：
+
+1. **`watchRoute` 原实现无效**（对应 §5 与 §9 中「SPA 路由」相关条目）。原方案 patch `history.pushState` / `replaceState`，但 content script 运行在隔离世界，与页面各自持有独立的 `window` 包装对象：在隔离世界里改写 `pushState` 只对隔离世界自己发出的调用生效，拦不到页面（Turbo）自己发出的调用。已在本机用 CDP 的 `Page.createIsolatedWorld` 复现确认（隔离世界内自调 `pushState` 命中改写，主世界调用则不命中，而 URL 确实变化）。
+   改为三条互补信号：`MutationObserver` 观察 `documentElement` 的子节点变化（Turbo 每次渲染整体替换 `<body>`，既是路由变化信号，也是宿主元素被摘掉的信号）、`popstate` 覆盖前进后退、1 秒轮询兜底只改 URL 不换 DOM 的软导航。
+
+2. **打包脚本 ZIP 本地文件头字段偏移写错**。`scripts/package.js` 把「压缩方式」写到了 offset 6（该处实为通用位标志），导致生成的 zip 本地头是 `FLAG=8 / METHOD=0`，而中央目录是 `FLAG=0 / METHOD=8`，与实际 deflate 数据不符。`.NET` / `Expand-Archive` 因读中央目录而能解出，但 `bsdtar` 会失败。已修正为 offset 8。
+
+3. **图标替换**。原图标是 GitHub 官方 Octocat 标志，扩展名也含 GitHub，存在商店「冒名与知识产权」政策风险。改为原创的跳跃箭头图形（`icons/icon.svg` 与 content.js 中的 `MARK_SVG`）。
+
+4. **新增工具栏入口**（§2 原「不做」项）。上架后面向普通用户时，选项页只能从扩展管理页进入，可发现性太差。新增 `action` + `popup.html` / `popup.js`，弹窗内一个按钮进入选项页。
+
+5. **可访问性与细节**：面板去掉不完整的 `role="menu"` / `role="menuitem"`（未实现方向键导航，ARIA menu 模式不完整），改为「按钮 + 链接列表」的 disclosure 模式，`aria-expanded` / `aria-controls` / `aria-current` 保留；面板高度测量抽成 `layoutPanel()`，自定义地址变化重绘面板时会重新测量，避免项变多后溢出视口。

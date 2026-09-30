@@ -12,6 +12,7 @@
 - **当前项置灰**：所在站点的对应项标「当前」并禁用，避免误点重复跳转
 - **可拖动**：按钮可拖到屏幕任意高度，松手后吸附最近的左/右边缘，位置自动记住
 - **自定义地址**：在选项页自行添加跳转地址，支持 `{owner}` / `{repo}` 占位符
+- **工具栏入口**：点工具栏图标即可打开自定义地址页，不用去扩展管理页里翻
 
 ## 效果
 
@@ -61,7 +62,7 @@
 
 ## 自定义地址
 
-在 `chrome://extensions` 的扩展详情页点「扩展程序选项」打开选项页，可以增删改自定义跳转地址：
+点工具栏上的扩展图标，在弹窗里点「管理自定义地址」进入选项页；也可以从 `chrome://extensions` 的扩展详情页点「扩展程序选项」进入。在选项页可以增删改自定义跳转地址：
 
 | 字段 | 必填 | 说明 |
 | --- | --- | --- |
@@ -81,6 +82,8 @@
 github-quick-jump/
 ├── manifest.json           # Manifest V3 声明
 ├── content.js              # 全部注入逻辑（含 Shadow DOM 样式）
+├── popup.html              # 工具栏弹窗（只负责进入选项页）
+├── popup.js
 ├── options.html            # 自定义地址管理页
 ├── options.js
 ├── icons/
@@ -130,19 +133,20 @@ python icons/render_icons.py
 node scripts/package.js
 ```
 
-产物为 `dist/github-quick-jump.zip`，只包含 `manifest.json`、`content.js`、`options.html`、`options.js`、`icons/` 下的 4 个图标。不包含 README、隐私政策、文档与测试文件。纯 node 实现、无第三方依赖，跨平台可用。
+产物为 `dist/github-quick-jump.zip`，只包含 `manifest.json`、`content.js`、`popup.html`、`popup.js`、`options.html`、`options.js`、`icons/` 下的 4 个图标。不包含 README、隐私政策、文档与测试文件。纯 node 实现、无第三方依赖，跨平台可用。
 
 上传商店时：
 
 - **隐私政策**字段填写 [PRIVACY.md](PRIVACY.md) 的公开地址（例如本仓库该文件在 GitHub 上的渲染页面）
 - 商店会校验 zip 里的 `manifest.json` 与图标，脚本已确保文件齐全
+- **截图**：商店要求 1280x800 或 640x400。仓库里已备好两张 1280x800 的图：`docs/images/store-panel-1280x800.png`（悬浮面板）与 `docs/images/store-options-1280x800.png`（选项页）。它们是用无头 Chrome 渲染真实 `content.js` / `options.html` 得到的；换成你自己装好扩展后在真实 GitHub 页面上的截图效果更好
 
 ## 技术要点
 
 - **Manifest V3**，纯 content script 注入，不使用 background service worker
 - **Shadow DOM 隔离样式**，GitHub 改版不会带崩按钮与面板外观
 - **URL 反解析**：按域名从 URL 反推 `owner/repo`，跳转模板与反解析互为逆运算，因此在任一站点上都能解析出仓库
-- **SPA 路由监听**：patch `history.pushState` / `replaceState` 并监听 `popstate`，页面内跳转时重新解析
+- **SPA 路由监听**：GitHub 是 Turbo 单页应用，站内跳转不重载文档。这里**不用** patch `history.pushState` —— content script 跑在隔离世界，和页面各持独立的 `window` 包装对象，改写 `pushState` 拦不到页面自己的调用（已用 CDP 实测确认）。改用三条互补信号：`MutationObserver` 观察 `documentElement` 子节点变化（Turbo 每次渲染都整体替换 `<body>`，这既是路由变化信号，也是宿主元素被摘掉的信号）、`popstate` 覆盖前进后退、1 秒轮询兜底只改 URL 的情况
 - **不可信输入处理**：渲染前一律清洗 `chrome.storage.sync` 里的自定义地址，丢弃非 http(s) 模板，跳转链接始终带 `rel="noopener noreferrer"`
 
 ## 已知限制
@@ -150,6 +154,7 @@ node scripts/package.js
 - 只支持 Chrome / Edge（Manifest V3），未做 Firefox 兼容
 - 不校验仓库是否存在，私有或不存在的仓库会直接拼接地址，由第三方服务返回 404
 - 自定义地址的排序、分组、启用开关未做，编辑只能在选项页进行
+- 站内软导航靠 DOM 变化与轮询识别，只改 URL 不换 DOM 的情况最坏有 1 秒延迟
 
 ## 隐私
 
